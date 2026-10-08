@@ -1,0 +1,70 @@
+# =============================================================================
+# requirements.txt — Smart Task Management Agent
+# =============================================================================
+#
+# AUDIT — ALL BUGS FOUND AND FIXED:
+#
+# BUG 1 (CRITICAL — ModuleNotFoundError):
+#   langgraph-checkpoint-sqlite was completely absent from requirements.txt.
+#   Since langgraph v0.2, SqliteSaver lives in a SEPARATE pip package
+#   (langgraph-checkpoint-sqlite). It is NOT bundled inside langgraph itself.
+#   The 'langgraph.checkpoint.sqlite' module only exists after this package
+#   is installed. That is the sole cause of:
+#     ModuleNotFoundError: No module named 'langgraph.checkpoint.sqlite'
+#
+# BUG 2 (CRITICAL — TypeError: Reviver.__init__() got an unexpected keyword):
+#   langgraph-checkpoint was also absent, so pip resolved a version conflict:
+#   when you pip-installed langgraph-checkpoint-sqlite without a pin, pip
+#   pulled the latest (3.x / 4.x), which dragged in langgraph-checkpoint 3.x.
+#   But langgraph==0.2.55 requires langgraph-checkpoint<3.0.0. The 3.x
+#   langgraph-checkpoint introduced a new Reviver class with a different
+#   constructor signature, causing the TypeError. Fix: pin both packages to
+#   compatible 2.x versions that satisfy langgraph 0.2.55's constraint.
+#
+# CORRECT DEPENDENCY MATRIX for langgraph==0.2.55:
+#   langgraph                 0.2.55   requires langgraph-checkpoint>=2,<3
+#   langgraph-checkpoint      2.0.26   highest stable 2.x release
+#   langgraph-checkpoint-sqlite 2.0.6  depends on langgraph-checkpoint>=2,<3
+#   aiosqlite                 0.20.0   required by SqliteSaver internals
+#
+# INSTALL:
+#   python -m venv venv
+#   source venv/bin/activate        # Windows: venv\Scripts\activate
+#   pip install -r requirements.txt
+# =============================================================================
+
+# ── Core AI framework ─────────────────────────────────────────────────────────
+langgraph==0.2.55
+langchain-core==0.3.25
+langchain-google-genai==2.0.7
+google-generativeai==0.8.3
+
+# ── Checkpointing — ALL THREE packages are required (Task 7) ─────────────────
+# langgraph-checkpoint: base saver interface; must be <3.0.0 for langgraph 0.2.x
+langgraph-checkpoint==2.0.26
+# langgraph-checkpoint-sqlite: provides langgraph.checkpoint.sqlite.SqliteSaver
+# THIS WAS THE MISSING PACKAGE CAUSING ModuleNotFoundError
+langgraph-checkpoint-sqlite==2.0.6
+# aiosqlite: async SQLite driver used by SqliteSaver
+aiosqlite==0.20.0
+
+# ── Web API (Task 9) ──────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+httpx==0.28.1
+
+# ── Observability (Task 8) ────────────────────────────────────────────────────
+langfuse==2.57.3
+
+# ── MCP server (Task 4) ───────────────────────────────────────────────────────
+# fastmcp 0.4.1 — stdio transport only. HTTP/ASGI added in 2.x.
+# mcp_server.py uses a FastAPI bridge for HTTP testing (see that file).
+fastmcp==0.4.1
+
+# ── Environment ───────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+
+# ── Testing / evaluation (Task 9) ─────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.24.0
